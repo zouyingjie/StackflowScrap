@@ -68,6 +68,10 @@ class MongoCache:
     def set_title(self, title, url):
         self.db.title_document.insert_one({"title": title, "url": url})
         # self.db.title.update({"_id": title},{'$set':url}, upsert=True)
+    def add_stackoverflow_vote(self, vote, url):
+        record = {"vote": vote}
+        self.db.stackover_flow.update({"url":url}, {"$set":record}, upsert=True)
+
 
     '''
     通过title或者url进行匹配查询
