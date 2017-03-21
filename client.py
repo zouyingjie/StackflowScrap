@@ -10,7 +10,8 @@ from urllib.error import URLError
 from url_downloader import download
 from url_exception import ManyRequestException
 from url_manager import MongoCache
-from url_parser import lxml_parse_stackover_flow_question_title, lxml_parse_stackoverflow_question_vote
+from url_parser import lxml_parse_stackover_flow_question_title, lxml_parse_stackoverflow_question_vote, \
+    lxml_parse_question_title_and_vote
 
 import os
 
@@ -19,9 +20,7 @@ question_likn_regex = '/questions/(.*)'
 
 
 def link_crawler(name):
-
     print('Child process (%s)   %s will start.' % (name, os.getpid()))
-
 
     cacheClient = MongoCache(expires=timedelta(days=30))
     end_page = int(name) * 2000
@@ -40,8 +39,9 @@ def link_crawler(name):
             for link in links:
                 # 获取到匹配的问题链接和标题
                 if re.match(question_likn_regex, str(link)):
-                    title = lxml_parse_stackover_flow_question_title(link, html)
-                    vote = lxml_parse_stackoverflow_question_vote(link, html)
+                    result = lxml_parse_question_title_and_vote(link, html)
+                    title = result[0]
+                    vote = result[1]
                     question_url = stackoverflow_url + link
                     if title is not None:
                         cacheClient.insert_stackoverflow_question(question_url, title)
@@ -66,6 +66,7 @@ def get_links(html):
     web_page_regex = re.compile('<a[^>]+href=["\'](.*?)["\'] class="question-hyperlink', re.IGNORECASE)
     return web_page_regex.findall(html)
 
+
 #
 if __name__ == '__main__':
     print('Parent process %s.' % os.getpid())
@@ -77,4 +78,3 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
     print('All subprocesses done.')
-
